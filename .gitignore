@@ -1,0 +1,4 @@
+*.png
+data/
+node_modules/
+.vscode/settings.json
