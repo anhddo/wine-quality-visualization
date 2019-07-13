@@ -8,10 +8,10 @@ let path = svg.append('path')
     .attr('stroke', 'red')
     .attr('fill', 'none');
 let i = 300;
-d3.select('body')
-    .on('keydown', () => {
-        console.log('down');
-        i--
-        path
-            .attr('stroke-dashoffset', i);
-    })
+let container_height = document.getElementById('container').offsetHeight;
+path.attr('stroke-dashoffset', 300);
+window.addEventListener('scroll', function () {
+    let scroll_value = document.getElementsByTagName('body')[0].scrollTop;
+    let i = 300 * (container_height - scroll_value) / container_height;
+    path.attr('stroke-dashoffset', i);
+});
