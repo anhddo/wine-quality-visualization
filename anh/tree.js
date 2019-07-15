@@ -7,9 +7,8 @@ function duplicate_text(selector, n = 10) {
     }
     $(selector).html(text);
 }
-$(function () {
-    duplicate_text('#tree');
-    duplicate_text('#about', 20)
+
+function anim(selector){
 
     data = [[10, 10], [100, 10], [100, 200]]
     let p = d3.line()(data)
@@ -35,4 +34,12 @@ $(function () {
         }
         path.attr('stroke-dashoffset', i);
     });
+}
+
+$(function () {
+    duplicate_text('#tree');
+    duplicate_text('#about', 20)
+    // anim('svg-1');
+    // anim('svg-2');
+    
 });
