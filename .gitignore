@@ -1,4 +1,5 @@
 *.png
+img/
 data/
 node_modules/
 .vscode/settings.json
