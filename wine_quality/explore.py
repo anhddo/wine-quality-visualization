@@ -123,4 +123,3 @@ x.columns[9]
 from sklearn.tree.export import _MPLTreeExporter
 # _MPLTreeExporter._make_tree()
 clf.tree_.children_left
-clf.tree_.
