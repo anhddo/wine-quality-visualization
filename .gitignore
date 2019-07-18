@@ -2,5 +2,5 @@
 img/
 data/
 node_modules/
-.vscode/settings.json
+.vscode/
 .vim

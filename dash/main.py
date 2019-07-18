@@ -53,11 +53,11 @@ app.layout = html.Div(
             value='MTL'
         ),
         dcc.Input(id='my-id', value='initial value', type='text'),
-        html.Div(id='my-div')
+        html.Div(id='my-div', children='Hello WOrld')
     ])
 
 @app.callback(
-    Output(component_id='my-div', component_property='children'),
+    Output(component_id='my-div'),
     [Input(component_id='my-id', component_property='value')]
 )
 def update_output_div(input_value):
