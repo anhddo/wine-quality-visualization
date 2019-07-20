@@ -1,0 +1,25 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pylint = "*"
+rope = "*"
+autopep8 = "*"
+
+[packages]
+dash = "==1.0.2"
+dash-core-components = "==1.0.0"
+matplotlib = "==3.1.0"
+numpy = "==1.16.4"
+pandas = "==0.24.2"
+plotly = "==4.0.0"
+scikit-learn = "==0.21.2"
+seaborn = "==0.9.0"
+Flask = "==1.1.1"
+gunicorn = "*"
+werkzeug = "*"
+
+[requires]
+python_version = "3.7.4"
