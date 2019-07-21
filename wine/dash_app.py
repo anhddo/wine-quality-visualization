@@ -17,6 +17,7 @@ from matplotlib.patches import Circle
 from matplotlib.collections import PatchCollection
 import pprint
 from . import wine_app
+import time
 
 LINK = dict(overview='/wine', explore='/wine/explore',
             classification='/wine/classification')
@@ -39,7 +40,7 @@ def correlation_graph():
     corr_matrix = df.corr().values[::-1, :]
     corr_values = corr_matrix.flatten()
     markers_size = abs(corr_values)
-    fig_size = 900
+    fig_size = 500
     circle_size = fig_size/20.0
     scatter = go.Scatter(
         x=xs, y=ys, mode='markers',
@@ -82,6 +83,7 @@ def correlation_graph():
         # title='Correlation matrix',
 
     )
+
     fig = go.Figure(
         data=scatter,
         layout=layout
@@ -91,9 +93,14 @@ def correlation_graph():
                         marker=dict(color='white'))
         fig.add_scatter(x=[i, i], y=[0, n], mode='lines',
                         marker=dict(color='white'))
+    # print(type(fig['data']))
+    # import sys
+    # print(sys.getsizeof(fig['data']), sys.getsizeof(df))
     return dcc.Graph(
+        id='correlation',
         figure=fig,
-        config=dict(displayModeBar=False)
+        config=dict(displayModeBar=False),
+        style={'display': 'inline-block'}
     )
 
 
@@ -104,29 +111,35 @@ def feature_histogram(feature_name):
     df['class'] = df['quality'].apply(convert_class)
     d1 = df[df['class'] == 'bad'][feature_name]
     d2 = df[df['class'] == 'good'][feature_name]
-    return dcc.Graph(
-        figure=ff.create_distplot([d1, d2], ['bad', 'good'], bin_size=0.1)
-    )
+    fig = ff.create_distplot([d1, d2], ['bad wine', 'good wine'], bin_size=0.1)
+    fig.update_layout(dict(width=500))
+    return fig
 
 
 def feature_layout():
     df = get_red_df()
-    return html.Div(children=[
-        dcc.Dropdown(
-            id='hist-dropdown',
-            options=[{'label': e, 'value': e} for e in df.columns],
-            value=df.columns[0]
-        ),
-        html.Div(id='hist-content')
-    ])
+    return html.Div(
+        style={'width': '500px', 'display': 'inline-block'},
+        children=[
+            dcc.Dropdown(
+                id='hist-dropdown',
+                options=[{'label': e, 'value': e} for e in df.columns],
+                value='alcohol'
+            ),
+            dcc.Graph(
+                id='hist-graph'
+            )
+        ])
 
 
 def pie_chart():
     from plotly.subplots import make_subplots
-    fig = make_subplots(rows=1, cols=3,
-                        specs=[
-                            [{'type': 'pie'}, {'type': 'pie'}, {'type': 'pie'}]]
-                        )
+    fig = make_subplots(
+        rows=1, cols=3,
+        specs=[
+            [{'type': 'pie'}, {'type': 'pie'}, {'type': 'pie'}]
+        ]
+    )
     red_df = get_red_df()
     white_df = get_white_df()
     def convert_class(x): return 'good' if x >= 7 else 'bad'
@@ -165,12 +178,7 @@ def preview_data():
     table = dash_table.DataTable(
         id='table',
         columns=[{"name": i, "id": i} for i in df.columns],
-        data=df.to_dict('records'),
-        css=[{
-            'selector': '.dash-cell div.dash-cell-value',
-            'rule': 'display: inline; white-space: inherit; overflow: inherit; text-overflow: inherit;'
-        }],
-        style_data={'whiteSpace': 'normal'}
+        data=df.to_dict('records')
     )
     # print(table)
     return table
@@ -193,23 +201,31 @@ def layout():
                 dcc.Link('Classification', className='tab',
                          id='classification', href=LINK['classification']),
             ]),
-            html.Div(id='page-content')
+            dcc.Loading(
+                id="loading-1", children=[
+                    html.Div(id='page-content')
+                ],
+                type="default"
+            )
         ]
     )
 
 
 def overview_layout():
     return html.Div([
+
         preview_data(),
         pie_chart()
     ])
 
 
 def explore_layout():
-    return html.Div([
-        correlation_graph(),
-        feature_layout()
-    ])
+    return html.Div(
+        [
+            correlation_graph(),
+            feature_layout()
+        ]
+    )
 
 
 def create_dash_app(app):
@@ -229,7 +245,7 @@ def create_dash_app(app):
         else:
             return preview_data()
 
-    @dash_app.callback(Output('hist-content', 'children'), [Input('hist-dropdown', 'value')])
+    @dash_app.callback(Output('hist-graph', 'figure'), [Input('hist-dropdown', 'value')])
     def update_hist_graph(value):
         return feature_histogram(value)
 
