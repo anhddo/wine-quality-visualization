@@ -1,0 +1,23 @@
+#main-page{
+    width: 1000px;
+    margin: auto;
+    border: 3px solid green;
+    box-shadow: 10px 10px 5px grey;
+}
+#page-content{
+    /* width: 500px; */
+}
+.group-info{
+    color: royalblue;
+    text-align: center;
+}
+#tab-bar{
+    text-align: center;
+}
+.tab{
+    padding-right: 10px;
+}
+table{
+    /* width: 1000px; */
+    table-layout: fixed;
+}

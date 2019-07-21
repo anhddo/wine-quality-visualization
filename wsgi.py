@@ -1,14 +1,7 @@
-from wine.app import create_app
-# from wine.dash_app import dash_app
-import dash_html_components as html
-from dash import Dash
-from flask import 
-dash_app = Dash(__name__,
-                requests_pathname_prefix='/')
-dash_app.layout = html.Div('hello world')
-if __name__ == "__main__":
-    # app = create_app()
-    # app.run(port=8050, debug=True)
-    print("asdad")
-    dash_app.run_server(debug=True)
+from wine import wine_app
+from wine.dash_app import create_dash_app
+# app = create_dash_app(wine_app.create_app()).server
+app = create_dash_app(wine_app.create_app()).server
 
+# if __name__ == "__main__":
+#     app.run_server(debug=True)
