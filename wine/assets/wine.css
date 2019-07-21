@@ -1,21 +1,45 @@
+:root {
+    --red0: #820505;
+}
 #main-page{
     width: 1100px;
     margin: auto;
-    border: 3px solid green;
+    border: 3px solid var(--red0);
     box-shadow: 10px 10px 5px grey;
 }
 #page-content{
     /* width: 500px; */
 }
 .group-info{
-    color: royalblue;
+    background-color:var(--red0);
+    font-size: 25px;
+    font-weight: bold;
+    color: white;
     text-align: center;
+    padding: 30px;
+    margin: 50px;
+    margin-top:30px;
+    box-shadow: 10px 10px 5px grey;
 }
 #tab-bar{
     text-align: center;
+    /* display: block; */
+    /* overflow: auto; */
+    /* height: auto; */
+    padding-bottom: 30px;
 }
 .tab{
-    padding-right: 10px;
+    padding: 10px;
+    display: inline;
+    border: 0;
+    border-right: 4px;
+    border-style: solid;
+    border-color: var(--red0);
+    /* border-right: 2px; */
+}
+.tab a{
+    text-decoration: none;
+    color: var(--red0);
 }
 table{
     /* width: 1000px; */

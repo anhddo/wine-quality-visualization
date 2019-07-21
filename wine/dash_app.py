@@ -20,7 +20,10 @@ from . import wine_app
 import time
 
 LINK = dict(overview='/wine', explore='/wine/explore',
-            classification='/wine/classification')
+            classification='/wine/classification',
+            about='/wine/about')
+RED0 = '#820505'
+WHITE0 = '#e8e1e1'
 
 
 def get_red_df():
@@ -121,14 +124,17 @@ def feature_layout():
     return html.Div(
         style={'width': '500px', 'display': 'inline-block'},
         children=[
-            dcc.Dropdown(
-                id='hist-dropdown',
-                options=[{'label': e, 'value': e} for e in df.columns],
-                value='alcohol'
-            ),
-            dcc.Graph(
-                id='hist-graph'
-            )
+            dcc.Loading(color=RED0, children=[
+                dcc.Dropdown(
+                    id='hist-dropdown',
+                    options=[{'label': e, 'value': e} for e in df.columns],
+                    value='alcohol'
+                ),
+                dcc.Graph(
+                    id='hist-graph'
+                )
+
+            ])
         ])
 
 
@@ -137,7 +143,7 @@ def pie_chart():
     fig = make_subplots(
         rows=1, cols=3,
         specs=[
-            [{'type': 'pie'}, {'type': 'pie'}, {'type': 'pie'}]
+            [{'type': 'xy'}, {'type': 'pie'}, {'type': 'pie'}]
         ]
     )
     red_df = get_red_df()
@@ -147,11 +153,12 @@ def pie_chart():
     good = (sum(white_df['class'] == 'good'))
     bad = white_df.shape[0]-good
     # red_df['class'] = df_red['quality'].apply(convert_class)
-    fig.add_trace(go.Pie(
-        labels=['Red white', 'White wine'],
-        values=[red_df.shape[0], white_df.shape[0]],
-        textinfo='value',
-        hole=0.3
+    fig.add_trace(go.Bar(
+        x=['Red white', 'White wine'],
+        y=[red_df.shape[0], white_df.shape[0]],
+        marker_color=[RED0, WHITE0],
+        # textinfo='value',
+        # hole=0.3
     ), row=1, col=1)
 
     fig.add_trace(go.Pie(
@@ -178,10 +185,28 @@ def preview_data():
     table = dash_table.DataTable(
         id='table',
         columns=[{"name": i, "id": i} for i in df.columns],
-        data=df.to_dict('records')
+        data=df.to_dict('records'),
+        style_header={'backgroundColor': RED0, 'color':'white'},
+        style_data={ 'border': '1px solid ' + RED0 },
+        style_data_conditional=[
+        {
+            'if': {'row_index': 'odd'},
+            'backgroundColor': WHITE0,
+        }
+        ]
     )
     # print(table)
     return table
+
+
+def create_tab(str, id, href):
+    return html.Div(
+        className='tab',
+        children=[
+            dcc.Link(str, href=href),
+        ]
+
+    )
 
 
 def layout():
@@ -190,21 +215,22 @@ def layout():
         children=[
             dcc.Location(id='url', refresh=False),
             html.Div(
-                'Group1: Dung Pham, Quan Hoang, Anh Do',
+                'Wine Quality',
                 className='group-info'
             ),
             html.Div(id='tab-bar', children=[
-                dcc.Link('Overview', className='tab',
-                         id='overview', href=LINK['overview']),
-                dcc.Link('Explore', className='tab',
-                         id='explore', href=LINK['explore']),
-                dcc.Link('Classification', className='tab',
-                         id='classification', href=LINK['classification']),
+                create_tab('Dataset', 'overview', LINK['overview']),
+                create_tab('Explore data', 'explore', LINK['explore']),
+                create_tab('Classification', 'classification',
+                           LINK['classification']),
+                create_tab('About', 'about', LINK['about']),
             ]),
             dcc.Loading(
-                id="loading-1", children=[
+                color=RED0,
+                children=[
                     html.Div(id='page-content')
                 ],
+
                 type="default"
             )
         ]
@@ -242,8 +268,14 @@ def create_dash_app(app):
             return explore_layout()
         elif pathname == LINK['overview']:
             return overview_layout()
+        elif pathname == LINK['about']:
+            return html.Div(
+                'Group1: Dung Pham, Quan Hoang, Anh Do',
+                id='about',
+                style={'text-align': 'center'}
+            )
         else:
-            return preview_data()
+            return html.Div("nothing yet")
 
     @dash_app.callback(Output('hist-graph', 'figure'), [Input('hist-dropdown', 'value')])
     def update_hist_graph(value):
