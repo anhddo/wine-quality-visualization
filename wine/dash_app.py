@@ -183,7 +183,8 @@ def pie_chart():
         rows=1, cols=2,
         specs=[
             [{'type': 'pie'}, {'type': 'pie'}]
-        ]
+        ],
+        subplot_titles=("White Wine","Red Wine")
     )
     fig.update_layout(dict(width=600))
 
@@ -195,15 +196,16 @@ def pie_chart():
         ),
         hole=0.5
     ), row=1, col=1)
-    fig.add_trace(go.Pie(
-        labels=['good', 'bad'],
-        values=[good, bad],
-        hole=0.5
-    ), row=1, col=2)
+    
+   
     red_df['class'] = red_df['quality'].apply(convert_class)
     good = (sum(red_df['class'] == 'good'))
     bad = red_df.shape[0]-good
-
+    fig.add_trace(go.Pie(
+            labels=['good', 'bad'],
+            values=[good, bad],
+            hole=0.5
+        ), row=1, col=2)
     return html.Div(
         children=[
             dcc.Graph(
@@ -284,7 +286,6 @@ def layout():
 
 def overview_layout():
     return html.Div([
-
         preview_data(),
         pie_chart()
     ])
