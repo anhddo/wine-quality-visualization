@@ -40,8 +40,6 @@ def correlation_graph():
     corr_matrix = df.corr().values  # [::-1, :]
     n = df.columns.size
     M = []
-    print(n)
-    print(range(n))
     for row in range(n):
         for col in range(n):
             if row != col:
@@ -171,7 +169,6 @@ def pie_chart():
     white_df['class'] = white_df['quality'].apply(convert_class)
     good = (sum(white_df['class'] == 'good'))
     bad = white_df.shape[0]-good
-    # red_df['class'] = df_red['quality'].apply(convert_class)
     bar_fig = go.Figure(layout=go.Layout(width=450))
     bar_fig.add_trace(go.Bar(
         x=['Red white', 'White wine'],
@@ -184,7 +181,7 @@ def pie_chart():
         specs=[
             [{'type': 'pie'}, {'type': 'pie'}]
         ],
-        subplot_titles=("White Wine","Red Wine")
+        subplot_titles=("White Wine", "Red Wine")
     )
     fig.update_layout(dict(width=600))
 
@@ -196,16 +193,15 @@ def pie_chart():
         ),
         hole=0.5
     ), row=1, col=1)
-    
-   
+
     red_df['class'] = red_df['quality'].apply(convert_class)
     good = (sum(red_df['class'] == 'good'))
     bad = red_df.shape[0]-good
     fig.add_trace(go.Pie(
-            labels=['good', 'bad'],
-            values=[good, bad],
-            hole=0.5
-        ), row=1, col=2)
+        labels=['good', 'bad'],
+        values=[good, bad],
+        hole=0.5
+    ), row=1, col=2)
     return html.Div(
         children=[
             dcc.Graph(
@@ -294,8 +290,11 @@ def overview_layout():
 def explore_layout():
     return html.Div(
         [
+            html.Div('What components make good wine?'),
             correlation_graph(),
-            feature_layout()
+            feature_layout(),
+            html.Div('Is there any relations between components?'),
+            html.Div('Does red wine and white wine share the same quality criteria?'),
         ]
     )
 
@@ -307,7 +306,7 @@ def create_dash_app(app):
         routes_pathname_prefix='/'
     )
     dash_app.config.suppress_callback_exceptions = True
-    dash_app.title='Wine Quality'
+    dash_app.title = 'Wine Quality'
     dash_app.layout = layout()
     @dash_app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
     def update_url(pathname):
