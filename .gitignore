@@ -4,3 +4,4 @@ node_modules/
 .vscode/
 .vim
 **__pycache__
+notebooks/.ipynb_checkpoints/
