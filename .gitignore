@@ -1,6 +1,5 @@
 *.png
 img/
-data/
 node_modules/
 .vscode/
 .vim
