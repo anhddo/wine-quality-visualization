@@ -9,6 +9,7 @@ import os
 from os.path import join, dirname
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.figure_factory as ff
 import dash_table
 import matplotlib.pyplot as plt
 import plotly.tools as tls
@@ -113,8 +114,23 @@ def correlation_graph():
     )
 
 
+def color_hist(feature_name):
+    df_white = DF_WHITE.copy(deep=True)
+    df_red = DF_RED.copy(deep=True)
+    df_white['type'] = 'white'
+    df_red['type'] = 'red'
+    df = pd.concat([df_red, df_white], ignore_index=True)
+    d1 = df[df['type'] == 'white'][feature_name]
+    d2 = df[df['type'] == 'red'][feature_name]
+    fig = ff.create_distplot(
+        [d1, d2], ['white wine', 'red wine'], colors=[WHITE0, RED0])
+    # fig.update_layout(dict(width=500))
+    return dcc.Graph(
+        figure=fig
+    )
+
+
 def feature_histogram(feature_name):
-    import plotly.figure_factory as ff
     df = DF_RED.copy(deep=True)
     def convert_class(x): return 'good' if x >= 7 else 'bad'
     df['class'] = df['quality'].apply(convert_class)
@@ -290,10 +306,22 @@ def explore_layout():
     return html.Div(
         [
             html.Div('What components make good wine?'),
-            correlation_graph(),
-            feature_layout(),
+            # correlation_graph(),
+            # feature_layout(),
             html.Div('Is there any relations between components?'),
-            html.Div('Does red wine and white wine share the same quality criteria?'),
+            html.Div(id='color-section', children=[
+                html.Div(
+                    'Is there any components which differ red wine and white wine?', className='left'
+                ),
+                html.Div(className='right',
+                         children=color_hist('total sulfur dioxide')
+                         ),
+                
+            ])
+            ,
+            html.Div(
+                    'Does red wine and white wine share the same quality criteria?'
+                )
         ]
     )
 
