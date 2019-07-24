@@ -10,8 +10,8 @@ from os.path import join, dirname
 import pandas as pd
 import plotly.graph_objects as go
 import dash_table
-import plotly.tools as tls
 import matplotlib.pyplot as plt
+import plotly.tools as tls
 import matplotlib as mpl
 from matplotlib.patches import Circle
 from matplotlib.collections import PatchCollection
@@ -26,23 +26,26 @@ RED0 = '#820505'
 WHITE0 = '#e8e1e1'
 
 
-def get_red_df():
-    return pd.read_csv(join(dirname(__file__), 'data', 'red.csv'), delimiter=';')
+def load(file_name):
+    print('Load ' + file_name)
+    return pd.read_csv(join(dirname(__file__), 'data', file_name), delimiter=';')
 
 
-def get_white_df():
-    return pd.read_csv(join(dirname(__file__), 'data', 'white.csv'), delimiter=';')
+DF_RED = load('red.csv')
+DF_WHITE = load('white.csv')
 
 
 def correlation_graph():
-    df = get_red_df()
+    df = DF_RED
+    corr_matrix = df.corr().values  # [::-1, :]
     n = df.columns.size
-
-    xs, ys = np.meshgrid(0.5+np.arange(n), 0.5+np.arange(n))
-    xs, ys = xs.flatten(), ys.flatten()
-    corr_matrix = df.corr().values[::-1, :]
-    corr_values = corr_matrix.flatten()
-    markers_size = abs(corr_values)
+    M = []
+    for row in range(n):
+        for col in range(n):
+            if row != col:
+                M.append((0.5+col, 0.5+n-1-row, corr_matrix[row, col]))
+    xs, ys, corr_values = zip(*M)
+    markers_size = abs(np.array(corr_values))
     fig_size = 500
     circle_size = fig_size/20.0
     scatter = go.Scatter(
@@ -56,7 +59,10 @@ def correlation_graph():
             colorbar=dict(
                 title="Colorbar"
             ),
-            colorscale="Viridis"
+            colorscale=[
+                [0, '#4a4142'],
+                [1, RED0]
+            ]
         )
     )
 
@@ -91,10 +97,10 @@ def correlation_graph():
         data=scatter,
         layout=layout
     )
-    for i in range(n+1):
-        fig.add_scatter(x=[0, n], y=[i, i], mode='lines',
+    for row in range(n+1):
+        fig.add_scatter(x=[0, n], y=[row, row], mode='lines',
                         marker=dict(color='white'))
-        fig.add_scatter(x=[i, i], y=[0, n], mode='lines',
+        fig.add_scatter(x=[row, row], y=[0, n], mode='lines',
                         marker=dict(color='white'))
     # print(type(fig['data']))
     # import sys
@@ -109,18 +115,34 @@ def correlation_graph():
 
 def feature_histogram(feature_name):
     import plotly.figure_factory as ff
-    df = get_red_df()
+    df = DF_RED.copy(deep=True)
     def convert_class(x): return 'good' if x >= 7 else 'bad'
     df['class'] = df['quality'].apply(convert_class)
     d1 = df[df['class'] == 'bad'][feature_name]
     d2 = df[df['class'] == 'good'][feature_name]
-    fig = ff.create_distplot([d1, d2], ['bad wine', 'good wine'], bin_size=0.1)
-    fig.update_layout(dict(width=500))
+    fig = ff.create_distplot(
+        [d1, d2], ['bad wine', 'good wine'], bin_size=0.1, colors=[WHITE0, RED0]
+    )
+    fig.update_traces(
+        marker=dict(
+            line=dict(
+                width=1,
+                color='black'
+            )
+        ),
+    )
+
+    fig.update_layout(dict(
+        width=500,
+        margin=dict(l=20, r=20, t=20, b=20),
+        paper_bgcolor="LightSteelBlue",
+        plot_bgcolor="LightSteelBlue",
+    ))
     return fig
 
 
 def feature_layout():
-    df = get_red_df()
+    df = DF_RED
     return html.Div(
         style={'width': '500px', 'display': 'inline-block'},
         children=[
@@ -140,32 +162,38 @@ def feature_layout():
 
 def pie_chart():
     from plotly.subplots import make_subplots
-    fig = make_subplots(
-        rows=1, cols=3,
-        specs=[
-            [{'type': 'xy'}, {'type': 'pie'}, {'type': 'pie'}]
-        ]
-    )
-    red_df = get_red_df()
-    white_df = get_white_df()
+
+    red_df = DF_RED.copy(deep=True)
+    white_df = DF_WHITE.copy(deep=True)
     def convert_class(x): return 'good' if x >= 7 else 'bad'
     white_df['class'] = white_df['quality'].apply(convert_class)
     good = (sum(white_df['class'] == 'good'))
     bad = white_df.shape[0]-good
-    # red_df['class'] = df_red['quality'].apply(convert_class)
-    fig.add_trace(go.Bar(
+    bar_fig = go.Figure(layout=go.Layout(width=450))
+    bar_fig.add_trace(go.Bar(
         x=['Red white', 'White wine'],
         y=[red_df.shape[0], white_df.shape[0]],
-        marker_color=[RED0, WHITE0],
-        # textinfo='value',
-        # hole=0.3
-    ), row=1, col=1)
+        marker_color=[RED0, WHITE0]
+    ))
+
+    fig = make_subplots(
+        rows=1, cols=2,
+        specs=[
+            [{'type': 'pie'}, {'type': 'pie'}]
+        ],
+        subplot_titles=("White Wine", "Red Wine")
+    )
+    fig.update_layout(dict(width=600))
 
     fig.add_trace(go.Pie(
         labels=['good', 'bad'],
         values=[good, bad],
+        marker=dict(
+            colors=[RED0, WHITE0],
+        ),
         hole=0.5
-    ), row=1, col=2)
+    ), row=1, col=1)
+
     red_df['class'] = red_df['quality'].apply(convert_class)
     good = (sum(red_df['class'] == 'good'))
     bad = red_df.shape[0]-good
@@ -173,26 +201,37 @@ def pie_chart():
         labels=['good', 'bad'],
         values=[good, bad],
         hole=0.5
-    ), row=1, col=3)
-    return dcc.Graph(
-        figure=fig
+    ), row=1, col=2)
+    return html.Div(
+        children=[
+            dcc.Graph(
+                figure=bar_fig,
+                style={'display': 'inline-block'}
+            ),
+            dcc.Graph(
+                figure=fig,
+                style={'display': 'inline-block'}
+            )
+
+        ],
+        style={'display': 'inline-block'}
     )
 
 
 def preview_data():
-    df = get_red_df().sample(frac=1).head(10)
+    df = DF_RED.sample(frac=1).head(10)
 
     table = dash_table.DataTable(
         id='table',
         columns=[{"name": i, "id": i} for i in df.columns],
         data=df.to_dict('records'),
-        style_header={'backgroundColor': RED0, 'color':'white'},
-        style_data={ 'border': '1px solid ' + RED0 },
+        style_header={'backgroundColor': RED0, 'color': 'white'},
+        style_data={'border': '1px solid ' + RED0},
         style_data_conditional=[
-        {
-            'if': {'row_index': 'odd'},
-            'backgroundColor': WHITE0,
-        }
+            {
+                'if': {'row_index': 'odd'},
+                'backgroundColor': WHITE0,
+            }
         ]
     )
     # print(table)
@@ -215,8 +254,12 @@ def layout():
         children=[
             dcc.Location(id='url', refresh=False),
             html.Div(
+                'Visual Analytics',
+                id='subject'
+            ),
+            html.Div(
                 'Wine Quality',
-                className='group-info'
+                id='header'
             ),
             html.Div(id='tab-bar', children=[
                 create_tab('Dataset', 'overview', LINK['overview']),
@@ -239,7 +282,6 @@ def layout():
 
 def overview_layout():
     return html.Div([
-
         preview_data(),
         pie_chart()
     ])
@@ -248,8 +290,11 @@ def overview_layout():
 def explore_layout():
     return html.Div(
         [
+            html.Div('What components make good wine?'),
             correlation_graph(),
-            feature_layout()
+            feature_layout(),
+            html.Div('Is there any relations between components?'),
+            html.Div('Does red wine and white wine share the same quality criteria?'),
         ]
     )
 
@@ -261,6 +306,7 @@ def create_dash_app(app):
         routes_pathname_prefix='/'
     )
     dash_app.config.suppress_callback_exceptions = True
+    dash_app.title = 'Wine Quality'
     dash_app.layout = layout()
     @dash_app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
     def update_url(pathname):
