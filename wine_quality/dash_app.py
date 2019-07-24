@@ -164,6 +164,7 @@ def pie_chart():
     fig.add_trace(go.Pie(
         labels=['good', 'bad'],
         values=[good, bad],
+        marker=dict(colors=[RED0, WHITE0]),
         hole=0.5
     ), row=1, col=2)
     red_df['class'] = red_df['quality'].apply(convert_class)
