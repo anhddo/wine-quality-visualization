@@ -7,6 +7,7 @@ verify_ssl = true
 pylint = "*"
 rope = "*"
 autopep8 = "*"
+jupyterlab = "*"
 
 [packages]
 dash = "*"
@@ -21,7 +22,7 @@ Flask = "==1.1.1"
 gunicorn = "*"
 werkzeug = "*"
 chart-studio = "*"
-jupyterlab = "*"
+
 
 [requires]
 python_version = "3.7.4"

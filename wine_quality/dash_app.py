@@ -10,6 +10,7 @@ from os.path import join, dirname
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.figure_factory as ff
+from plotly.subplots import make_subplots
 import dash_table
 import matplotlib.pyplot as plt
 import plotly.tools as tls
@@ -36,9 +37,15 @@ DF_RED = load('red.csv')
 DF_WHITE = load('white.csv')
 
 
-def correlation_graph():
+def correlation_fig(**kargs):
     df = DF_RED
+    cscale = [[0, '#4a4142'], [1, RED0]]
+    if kargs['wine_type'] == 'white':
+        df = DF_WHITE
+        cscale = [[0, '#4a4142'], [1, "#FFF"]]
     corr_matrix = df.corr().values  # [::-1, :]
+    # print(DF_RED.corr())
+    # print(DF_WHITE.corr())
     n = df.columns.size
     M = []
     for row in range(n):
@@ -60,10 +67,7 @@ def correlation_graph():
             colorbar=dict(
                 title="Colorbar"
             ),
-            colorscale=[
-                [0, '#4a4142'],
-                [1, RED0]
-            ]
+            colorscale=cscale
         )
     )
 
@@ -89,6 +93,7 @@ def correlation_graph():
             autorange=False,
             zeroline=False
         ),
+        plot_bgcolor="LightSteelBlue",
         # autosize=True,
         # title='Correlation matrix',
 
@@ -102,15 +107,35 @@ def correlation_graph():
         fig.add_scatter(x=[0, n], y=[row, row], mode='lines',
                         marker=dict(color='white'))
         fig.add_scatter(x=[row, row], y=[0, n], mode='lines',
-                        marker=dict(color='white'))
+                        marker=dict(color='black'))
+    return fig
+
+
+def correlation_graph(**kargs):
+
+    # fig.add_trace(correlation_fig(wine_type='red'), row=1,col=1)
+    # fig.add_trace(correlation_fig(wine_type='white'), row=1, col=2)
     # print(type(fig['data']))
     # import sys
     # print(sys.getsizeof(fig['data']), sys.getsizeof(df))
-    return dcc.Graph(
-        id='correlation',
-        figure=fig,
-        config=dict(displayModeBar=False),
-        style={'display': 'inline-block'}
+    return dcc.Loading(
+        children=[
+            dcc.Graph(
+                id='correlation-red',
+                figure=correlation_fig(wine_type='red'),
+                config=dict(displayModeBar=False),
+                style={'display': 'inline-block'}
+            ),
+            dcc.Graph(
+                id='correlation-white',
+                figure=correlation_fig(wine_type='white'),
+                config=dict(displayModeBar=False),
+                style={'display': 'inline-block'}
+            )
+        ],
+
+
+        color=RED0
     )
 
 
@@ -125,9 +150,7 @@ def color_hist(feature_name):
     fig = ff.create_distplot(
         [d1, d2], ['white wine', 'red wine'], colors=[WHITE0, RED0])
     fig.update_layout(dict(width=500))
-    return dcc.Graph(
-        figure=fig
-    )
+    return fig
 
 
 def feature_histogram(feature_name):
@@ -177,8 +200,6 @@ def feature_layout():
 
 
 def pie_chart():
-    from plotly.subplots import make_subplots
-
     red_df = DF_RED.copy(deep=True)
     white_df = DF_WHITE.copy(deep=True)
     def convert_class(x): return 'good' if x >= 7 else 'bad'
@@ -286,6 +307,7 @@ def layout():
             dcc.Loading(
                 color=RED0,
                 children=[
+
                     html.Div(id='page-content')
                 ],
 
@@ -296,57 +318,87 @@ def layout():
 
 
 def overview_layout():
-    return html.Div([
-        preview_data(),
-        pie_chart()
-    ])
-
-
-def explore_layout():
     return html.Div(
-        [
-            html.Div(
-                id='good-wine-explain',
-                className='shadow-block',
-                children=[
-                    html.Div('What components make good wine?'),
-                    html.Div('Is there any relations between components?'),
-                    # correlation_graph(),
-                    # feature_layout(),
-                ]
-            ),
-            html.Div(
-                id='color-section',
-                className='shadow-block',
-                children=[
-                    html.Div(
-                        'Is there any components which differ red wine and white wine?', className='left'
-                    ),
-                    html.Div(className='right',
-                             children=color_hist('total sulfur dioxide')
-                             ),
+        className='board',
+        children=[
+            preview_data(),
+            pie_chart()
+        ])
 
-                ]),
-            html.Div(
-                'Does red wine and white wine share the same quality criteria?'
+
+def explore_content(**kargs):
+    return [
+        html.Div(
+            id='good-wine-explain',
+            className='board',
+            children=[
+                html.Div('What components make good wine?'),
+                html.Div(
+                    'Is there any relations between components?'),
+                correlation_graph(**kargs),
+            ]
+        ),
+        html.Div(
+            id='color-section',
+            className='board',
+            children=[
+                html.Div(
+                    'Is there any components which differ red wine and white wine?', className='left'
+                ),
+                dcc.Loading(
+                    color=RED0,
+                    children=html.Div(
+                        className='right',
+                        children=[
+                            dcc.Dropdown(
+                                id='color-dropdown',
+                                options=[{'label': e, 'value': e}
+                                         for e in DF_RED.columns],
+                                value='total sulfur dioxide'
+                            ),
+                            dcc.Graph(
+                                id='color-hist-graph',
+                                figure=color_hist('total sulfur dioxide')
+                            )
+                        ]
+                    ),
+                )
+
+            ]),
+        html.Div(
+            'Does red wine and white wine share the same quality criteria?'
+        )
+    ]
+
+
+def explore_layout(**kargs):
+    return html.Div(
+        children=[
+            dcc.RadioItems(
+                id='select-wine',
+                options=[
+                    {'label': 'Red wine', 'value': 'red'},
+                    {'label': 'White wine', 'value': 'white'},
+                ],
+                value='red',
+                labelStyle={'display': 'inline-block'}
+            ),
+            dcc.Loading(
+                children=html.Div(
+                    id='explore-content',
+                    children=explore_content(**kargs)
+                ),
+                color=RED0
             )
         ]
     )
 
 
-def create_dash_app(app):
-    dash_app = Dash(
-        __name__,
-        server=app,
-        routes_pathname_prefix='/'
-    )
-    dash_app.config.suppress_callback_exceptions = True
-    dash_app.title = 'Wine Quality'
-    dash_app.layout = layout()
+def page_content_callback(dash_app):
     @dash_app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
     def update_url(pathname):
         if pathname == LINK['explore']:
-            return explore_layout()
+            return explore_layout(wine_type='red')
         elif pathname == LINK['overview']:
             return overview_layout()
         elif pathname == LINK['about']:
@@ -358,8 +410,38 @@ def create_dash_app(app):
         else:
             return html.Div("nothing yet")
 
+
+def choose_wine_callback(dash_app):
+    @dash_app.callback(Output('correlation', 'figure'), [Input('select-wine', 'value')])
+    def func(value):
+        return correlation_fig(wine_type=value)
+
+
+def hist_graph_dropdown_callback(dash_app):
     @dash_app.callback(Output('hist-graph', 'figure'), [Input('hist-dropdown', 'value')])
     def update_hist_graph(value):
         return feature_histogram(value)
+
+
+def color_dropdown_callback(dash_app):
+    @dash_app.callback(Output('color-hist-graph', 'figure'), [Input('color-dropdown', 'value')])
+    def update_hist_graph(value):
+        return color_hist(value)
+
+
+def create_dash_app(app):
+    dash_app = Dash(
+        __name__,
+        server=app,
+        routes_pathname_prefix='/'
+    )
+    dash_app.config.suppress_callback_exceptions = True
+    dash_app.title = 'Wine Quality'
+    dash_app.layout = layout()
+
+    choose_wine_callback(dash_app)
+    page_content_callback(dash_app)
+    hist_graph_dropdown_callback(dash_app)
+    color_dropdown_callback(dash_app)
 
     return dash_app
