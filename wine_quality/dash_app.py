@@ -124,7 +124,7 @@ def color_hist(feature_name):
     d2 = df[df['type'] == 'red'][feature_name]
     fig = ff.create_distplot(
         [d1, d2], ['white wine', 'red wine'], colors=[WHITE0, RED0])
-    # fig.update_layout(dict(width=500))
+    fig.update_layout(dict(width=500))
     return dcc.Graph(
         figure=fig
     )
@@ -305,23 +305,31 @@ def overview_layout():
 def explore_layout():
     return html.Div(
         [
-            html.Div('What components make good wine?'),
-            # correlation_graph(),
-            # feature_layout(),
-            html.Div('Is there any relations between components?'),
-            html.Div(id='color-section', children=[
-                html.Div(
-                    'Is there any components which differ red wine and white wine?', className='left'
-                ),
-                html.Div(className='right',
-                         children=color_hist('total sulfur dioxide')
-                         ),
-                
-            ])
-            ,
             html.Div(
-                    'Does red wine and white wine share the same quality criteria?'
-                )
+                id='good-wine-explain',
+                className='shadow-block',
+                children=[
+                    html.Div('What components make good wine?'),
+                    html.Div('Is there any relations between components?'),
+                    # correlation_graph(),
+                    # feature_layout(),
+                ]
+            ),
+            html.Div(
+                id='color-section',
+                className='shadow-block',
+                children=[
+                    html.Div(
+                        'Is there any components which differ red wine and white wine?', className='left'
+                    ),
+                    html.Div(className='right',
+                             children=color_hist('total sulfur dioxide')
+                             ),
+
+                ]),
+            html.Div(
+                'Does red wine and white wine share the same quality criteria?'
+            )
         ]
     )
 
