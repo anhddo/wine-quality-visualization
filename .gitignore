@@ -5,3 +5,4 @@ node_modules/
 .vim
 **__pycache__
 notebooks/.ipynb_checkpoints/
+Pipfile.lock
