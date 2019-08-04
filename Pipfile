@@ -8,18 +8,19 @@ pylint = "*"
 rope = "*"
 autopep8 = "*"
 jupyterlab = "*"
-gunicorn = "*"
 werkzeug = "*"
 chart-studio = "*"
 seaborn = "==0.9.0"
 matplotlib = "==3.1.0"
+
 [packages]
 dash = "*"
+Flask = "==1.1.1"
 numpy = "==1.16.4"
 pandas = "==0.24.2"
 plotly = "*"
 scikit-learn = "==0.21.2"
-Flask = "==1.1.1"
+gunicorn = "*"
 
 [requires]
 python_version = "3.7.4"
