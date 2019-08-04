@@ -1,5 +1,4 @@
 import numpy as np
-import seaborn as sns
 import plotly.express as px
 from dash import Dash
 import dash_html_components as html
@@ -12,11 +11,7 @@ import plotly.graph_objects as go
 import plotly.figure_factory as ff
 from plotly.subplots import make_subplots
 import dash_table
-import matplotlib.pyplot as plt
 import plotly.tools as tls
-import matplotlib as mpl
-from matplotlib.patches import Circle
-from matplotlib.collections import PatchCollection
 import pprint
 from . import wine_app
 import time
