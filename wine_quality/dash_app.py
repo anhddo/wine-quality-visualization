@@ -16,7 +16,7 @@ import pprint
 from . import wine_app
 import time
 
-LINK = dict(overview='/wine', explore='/wine/explore',
+LINK = dict(overview='/', explore='/wine/explore',
             classification='/wine/classification',
             about='/wine/about')
 RED0 = '#820505'
