@@ -423,7 +423,7 @@ def color_dropdown_callback(dash_app):
         return color_hist(value)
 
 
-def create_dash_app(app):
+def register_dash(app):
     dash_app = Dash(
         __name__,
         server=app,
@@ -437,5 +437,3 @@ def create_dash_app(app):
     page_content_callback(dash_app)
     hist_graph_dropdown_callback(dash_app)
     color_dropdown_callback(dash_app)
-
-    return dash_app
