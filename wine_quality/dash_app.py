@@ -13,7 +13,6 @@ from plotly.subplots import make_subplots
 import dash_table
 import plotly.tools as tls
 import pprint
-from . import wine_app
 import time
 
 LINK = dict(overview='/', explore='/wine/explore',
