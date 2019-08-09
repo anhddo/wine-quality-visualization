@@ -294,8 +294,7 @@ def layout():
             html.Div(id='tab-bar', children=[
                 create_tab('Dataset', 'overview', LINK['overview']),
                 create_tab('Explore data', 'explore', LINK['explore']),
-                create_tab('Classification', 'classification',
-                           LINK['classification']),
+                # create_tab('Classification', 'classification', LINK['classification']),
                 create_tab('About', 'about', LINK['about']),
             ]),
             dcc.Loading(
@@ -319,13 +318,24 @@ def overview_layout():
             pie_chart()
         ])
 
+def markdown_good_wine():
+    return html.Div(className="board", children=[
+        dcc.Markdown('''
+                ## What components make good wine?
+                * Wine score (from 0-10) is already given. Therefore, correlation value of the component value with wine score could determine which components make good wine. Features  having  strong  effect  onthe wine quality will have high absolute correlation score with the quality.  
+                * The dataset have 2 kind of wine. In the correlation matrix, upper triangle and lower triangle for red wine and white wine, respectively.  
+                * Look at the correlation matrix, alcohol have strong positive correlation in both wine type. That means increasing wine qualitytend to increase the quality as well.  
+        ''')
+    ])
 
 def explore_content(**kargs):
     return [
+        markdown_good_wine(),
         html.Div(
             id='good-wine-explain',
             className='board',
             children=[
+                            
                 html.Div('What components make good wine?'),
                 html.Div(
                     'Is there any relations between components?'),
@@ -368,15 +378,6 @@ def explore_content(**kargs):
 def explore_layout(**kargs):
     return html.Div(
         children=[
-            dcc.RadioItems(
-                id='select-wine',
-                options=[
-                    {'label': 'Red wine', 'value': 'red'},
-                    {'label': 'White wine', 'value': 'white'},
-                ],
-                value='red',
-                labelStyle={'display': 'inline-block'}
-            ),
             dcc.Loading(
                 children=html.Div(
                     id='explore-content',
@@ -437,3 +438,4 @@ def register_dash(app):
     page_content_callback(dash_app)
     hist_graph_dropdown_callback(dash_app)
     color_dropdown_callback(dash_app)
+    return dash_app
