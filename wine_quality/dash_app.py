@@ -31,6 +31,12 @@ def load(file_name):
 DF_RED = load('red.csv')
 DF_WHITE = load('white.csv')
 
+OPPOSITE_COLOR_0='crimson'
+df_red = DF_RED.copy(deep=True)
+df_white = DF_WHITE.copy(deep=True)
+df_red['color'] = 'red'
+df_white['color'] ='white'
+df_combine = pd.concat([df_red, df_white])
 
 def correlation_fig(**kargs):
     cscale = [[0, 'black'], [1, MAIN_COLOR_0]]
@@ -85,7 +91,7 @@ def correlation_fig(**kargs):
         xaxis=xaxis_conf,
         #     showlegend=False,
         width=fig_size, height=fig_size,
-        margin=dict(pad=0),
+        margin=dict(pad=0, t=0, l=0, r=0, b=0),
         plot_bgcolor="white"
     )
 
@@ -115,13 +121,7 @@ def correlation_fig(**kargs):
     return fig
 
 
-def correlation_graph(**kargs):
-
-    # fig.add_trace(correlation_fig(wine_type='red'), row=1,col=1)
-    # fig.add_trace(correlation_fig(wine_type='white'), row=1, col=2)
-    # print(type(fig['data']))
-    # import sys
-    # print(sys.getsizeof(fig['data']), sys.getsizeof(df))
+def correlation_graph():
     return dcc.Loading(
         children=[
             dcc.Graph(
@@ -131,34 +131,50 @@ def correlation_graph(**kargs):
                 style={'display': 'inline-block', 'overflow': 'auto'}
             )
         ],
-
-
         color=MAIN_COLOR_0
     )
 
 
-def color_hist(feature_name):
-    df_white = DF_WHITE.copy(deep=True)
-    df_red = DF_RED.copy(deep=True)
-    df_white['type'] = 'white'
-    df_red['type'] = 'red'
-    df = pd.concat([df_red, df_white], ignore_index=True)
-    d1 = df[df['type'] == 'white'][feature_name]
-    d2 = df[df['type'] == 'red'][feature_name]
+
+def single_feature_red_white(feature_name):
     fig = ff.create_distplot(
-        [d1, d2], ['white wine', 'red wine'], colors=[WHITE0, MAIN_COLOR_0])
-    fig.update_layout(dict(width=500))
+        [DF_RED[feature_name], DF_WHITE[feature_name]],
+        ['red wine', 'white wine'],
+        bin_size=DF_RED[feature_name].std()/5,
+        colors=[MAIN_COLOR_0, MAIN_COLOR_1],
+        show_rug=False
+    )
+    fig.update_traces(
+        marker=dict(
+            line=dict(
+                width=1,
+                color='black'
+            )
+        ),
+    )
+    fig.update_layout(dict(
+        width=500, height=400,
+        margin=dict(l=20, r=20, t=20, b=20),
+        #     paper_bgcolor="LightSteelBlue",
+        plot_bgcolor="white",
+    ))
     return fig
 
 
-def feature_histogram(feature_name):
-    df = DF_RED.copy(deep=True)
+def feature_seperation_figure(feature_name, is_red=True):
+    df = None
+    if is_red:
+        df = DF_RED.copy(deep=True)
+    else:
+        df = DF_WHITE.copy(deep=True)
+
     def convert_class(x): return 'good' if x >= 7 else 'bad'
     df['class'] = df['quality'].apply(convert_class)
     d1 = df[df['class'] == 'bad'][feature_name]
     d2 = df[df['class'] == 'good'][feature_name]
     fig = ff.create_distplot(
-        [d1, d2], ['bad wine', 'good wine'], bin_size=0.1, colors=[WHITE0, MAIN_COLOR_0]
+        [d1, d2], ['bad wine', 'good wine'], bin_size=df[feature_name].std() / 5,
+        colors=[MAIN_COLOR_1, MAIN_COLOR_0], show_rug=False
     )
     fig.update_traces(
         marker=dict(
@@ -172,8 +188,8 @@ def feature_histogram(feature_name):
     fig.update_layout(dict(
         width=500,
         margin=dict(l=20, r=20, t=20, b=20),
-        paper_bgcolor="LightSteelBlue",
-        plot_bgcolor="LightSteelBlue",
+        #     paper_bgcolor="LightSteelBlue",
+        plot_bgcolor="white",
     ))
     return fig
 
@@ -334,11 +350,11 @@ def layout():
         ]
     )
 
+
 def about_markdown():
     return dcc.Markdown(
         className='board',
-        children=
-        '''
+        children='''
         **John von Neumann Institute ICT 2018**  
         **Group 1:**
         * Pham Tien Dung
@@ -354,35 +370,36 @@ def about_markdown():
 
     )
 
+
 def introduction():
     return html.Div(
         className='board',
-        children=
-            html.Div(
-                children=[
-                    html.Div(
-                        className='heading',
-                        children='Introduction'
-                    ),
+        children=html.Div(
+            children=[
+                html.Div(
+                    className='heading-1',
+                    children='Introduction'
+                ),
 
-                    dcc.Markdown(
-                        '''
+                dcc.Markdown(
+                    '''
                         The two datasets are red and white wine of the ** Portuguese "Vinho Verde" ** wine. 
                         The inputs include based onsensory data and the output is evaluated by experts.  
                         Each expert graded the wine quality between 0 (very bad)and 10 (excellent).  The quality is the median of at least 3 evaluations made by wine expert.  
                         '''
-                    )
-                ]
-            )
-        
+                )
+            ]
+        )
+
     )
 
+
 def simple_statistic_markdown():
-    return  html.Div(
+    return html.Div(
         className='board',
         children=[
             html.Div(
-                className='heading',
+                className='heading-1',
                 children='Statistic'
             ),
             dcc.Markdown(
@@ -393,25 +410,26 @@ def simple_statistic_markdown():
         ]
     )
 
+
 def overview_layout():
     return html.Div(
         # className='board',
         children=[
             introduction(),
-            html.Div(
+            dcc.Loading(
                 className='board',
                 children=preview_dataframe(),
             ),
             simple_statistic_markdown(),
-            html.Div(
+            dcc.Loading(
                 className='d-flex flex-row',
                 children=[
                     html.Div(
-                        className='board',
+                        className='board d-flex',
                         children=count_chart()
                     ),
                     html.Div(
-                        className='board',
+                        className='board d-flex',
                         children=pie_chart()
                     )
                 ]
@@ -420,69 +438,264 @@ def overview_layout():
 
 
 def markdown_good_wine():
-    return html.Div(className="board", children=[
-        dcc.Markdown('''
-               
-                * The dataset have 2 kind of wine. In the correlation matrix, upper triangle and lower triangle for red wine and white wine, respectively.  
-                * Look at the correlation matrix, alcohol have strong positive correlation in both wine type. That means increasing wine qualitytend to increase the quality as well.
-        ''')
-    ])
+    return html.Div(
+        className="board",
+        children=[
+            html.Div(className='heading-2', children='Correlation'),
+            dcc.Markdown('''
+                
+                    * The dataset have 2 kind of wine. In the correlation matrix, upper triangle and lower triangle for red wine and white wine, respectively.  
+                    * Look at the correlation matrix, alcohol have strong positive correlation in both wine type. That means increasing wine quality tend to increase the quality as well.
+            ''')
+        ]
+    )
 
 
-def explore_content(**kargs):
-    return [
-        html.Div(children=[
-            dcc.Markdown(className='board', children='''
-            ## What components make good wine?
-            * Wine score (from 0-10) is already given. Therefore, correlation value of the component value with wine score could determine which components make good wine. Features  having  strong  effect  onthe wine quality will have high absolute correlation score with the quality.  
-            '''),
-            html.Div(className='d-flex', children=[
-                markdown_good_wine(),
-                html.Div(
-                    id='good-wine-explain',
-                    className='board',
-                    children=[
-                        correlation_graph(**kargs),
-                    ]
-                ),
+def question1():
+    return html.Div(
+        className='board',
+        children=[
+            html.Div(
+                className='heading-1',
+                children='1. What components make good wine?'
+            ),
+            dcc.Markdown(children='''
+                * Wine score (from 0-10) is already given. Therefore, correlation value of the component value with wine score could determine which components make good wine. Features  having  strong  effect  onthe wine quality will have high absolute correlation score with the quality.  
+                '''),
+
+        ]
+    )
+
+
+def question2():
+    return html.Div(
+        className='board',
+        children=[
+            html.Div(className='heading-1', children='''
+                2. Is there any relations between components, explain those relations?
+                '''),
+            dcc.Markdown('''
+                        Alcohol and density pair have very strong negative correlation score, especially in white wine. Due to common knowledge, the density of ethanol is $0.789 g/cm^3$ and the density water is $1.000 g/cm^3$.  Intuitively, increasing alcohol will lower the density of wine.
+                    ''')
+        ]
+    )
+
+
+def correlation_section(**kargs):
+    return html.Div(
+        className='d-flex',
+        children=[
+            markdown_good_wine(),
+            html.Div(
+                id='correlation-graph',
+                className='board d-flex',
+                children=[
+                    correlation_graph(**kargs),
+                ]
+            ),
+        ]
+    )
+
+
+def good_feature_section():
+    return html.Div(
+        className='d-flex',
+        children=[
+            html.Div(className='board', children=[
+                html.Div(className='heading-2', children='Good feature!'),
+                dcc.Markdown('''
+                Histogram is a good visualization which show the separation strength of each components. Thus, good feature are features that separate clearly good and bad wine.
+                ''')
             ]),
             html.Div(
-                className='d-flex',
+                # color=MAIN_COLOR_0,
+                children=dcc.Loading(
+                    className='board',
+                    children=[
+                        dcc.Dropdown(
+                            id='hist-dropdown',
+                            options=[{'label': e, 'value': e}
+                                     for e in DF_RED.columns],
+                            value='alcohol'
+                        ),
+                        dcc.Graph(
+                            id='hist-graph'
+                        )
+                    ]
+                )
+            )
+        ]
+    )
+
+
+def question3():
+    return html.Div(
+        className='board',
+        children=[
+            html.Div(className='heading-1',
+                     children='3. Does red wine and white wine share the same quality criteria?'),
+            dcc.Markdown('''
+                * Both kind of wine share the same criteria on the alcohol. It seem the higher level of alcohol the better.
+                * However, two wine type have different criteria in density and volatile acidity. 
+                * In general, people prefer low density wine, especially in white wine. That make sense cause people also prefer high level of alcohol.
+                * Low volatile acidity is important for red wine, but it's not so important for the white one. As the name suggests, volatile acidity (VA) is referencing volatility in wine, which causes it to go bad. Acetic acid builds up in wine when there’s too much exposure to oxygen during winemaking and is usually caused by acetobacter (the vinegar-making bacteria!). Volatile acidity is considered a fault at higher levels (1.4 g/L in red and 1.2 g/L in white) and can smell sharp like nail polish remover.
+            ''')
+        ]
+    )
+
+
+def single_feature_section():
+    return html.Div(
+        className='d-flex flex-row',
+        children=[
+            html.Div(
+                className='board',
                 children=[
+                    html.Div(
+                        className='heading-2',
+                        children="Single feature"
+                    ),
+                    dcc.Markdown(children='''
+                        Histogram is very good to find resonable good feature to discriminate wine color, such as: " **volatile acidity**", "**total sulfur dioxide**".
+                    '''),
+                ]
+            ),
+            html.Div(
+                className='board',
+                children=[
+                    dcc.Dropdown(
+                        id='color-dropdown',
+                        options=[{'label': e, 'value': e}
+                                 for e in DF_RED.columns],
+                        value='total sulfur dioxide'
+                    ),
+                    dcc.Loading(
+                        dcc.Graph(
+                            id='single-ftr-hist',
+                        )
+                    )
 
                 ]
             )
-        ]),
-        html.Div(
-            id='color-section',
-            className='board',
-            children=[
-                html.Div(
-                    'Is there any components which differ red wine and white wine?', className='left'
-                ),
-                dcc.Loading(
-                    color=MAIN_COLOR_0,
-                    children=html.Div(
-                        className='right',
+        ]
+    )
+
+
+def pair_feature_section():
+    return html.Div(
+        # className='d-flex flex-row',
+        children=[
+            html.Div(
+                className='board',
+                children=[
+                    html.Div(
+                        className='heading-2',
+                        children="Pair features"
+                    ),
+                    dcc.Markdown(children='''
+                        With one more attribute, the separation is a bit clearer using scatter plot or density contour plot.  
+                        **Pair features give good separation:**
+                        * total sulfur dioxide, chlorides
+                        * sulphates, chlorides
+                        * sulphates, fixed acidity
+                    '''),
+                ]
+            ),
+            html.Div(
+                className='board',
+                children=[
+                    html.Div(
+                        className='row justify-content-center',
                         children=[
-                            dcc.Dropdown(
-                                id='color-dropdown',
-                                options=[{'label': e, 'value': e}
-                                         for e in DF_RED.columns],
-                                value='total sulfur dioxide'
+                            html.Div(
+                                className='w-25 mr-3',
+                                children=dcc.Dropdown(
+                                    id='1st-ftr-dropdown',
+                                    options=[{'label': e, 'value': e}
+                                             for e in DF_RED.columns],
+                                    value='total sulfur dioxide'
+                                ),
                             ),
-                            dcc.Graph(
-                                id='color-hist-graph',
-                                figure=color_hist('total sulfur dioxide')
+                            html.Div(
+                                className='w-25',
+                                children=dcc.Dropdown(
+                                    id='2nd-ftr-dropdown',
+                                    options=[{'label': e, 'value': e}
+                                             for e in DF_RED.columns],
+                                    value=DF_RED.columns[2]
+                                ),
                             )
                         ]
                     ),
-                )
+                    dcc.Loading(
+                        html.Div(
+                            className='d-flex',
+                            children=[
+                                dcc.Graph(
+                                    id='pair-scatter-graph',
+                                ),
+                                dcc.Graph(
+                                    id='pair-contour-graph'
+                                )
+                            ]
+                        )
+                    )
 
-            ]),
-        html.Div(
-            'Does red wine and white wine share the same quality criteria?'
-        )
+                ]
+            )
+        ]
+    )
+
+def pair_scatter(ftr0, ftr1):
+    fig = px.scatter(df_combine, x=ftr0, y=ftr1,
+                color='color', 
+                color_discrete_sequence=[OPPOSITE_COLOR_0, MAIN_COLOR_0],
+                opacity=0.3
+    )
+    fig.update_layout(dict(
+        width=400, height=400, legend=dict(xanchor='left', x=0, y=1.2),
+        margin=dict(l=0, r=0)
+    ))
+    return fig
+
+def pair_contour(ftr0, ftr1):
+    fig = px.density_contour(
+        df_combine, x=ftr0, y=ftr1, color="color", 
+        color_discrete_sequence=[OPPOSITE_COLOR_0, MAIN_COLOR_0],
+        marginal_x="histogram", marginal_y="histogram"
+    )
+
+    fig.update_layout(dict(
+        width=500, height=400, legend=dict(xanchor='left', x=0, y=1.2),
+        margin=dict(l=0, r=0)
+    ))
+    return fig
+
+def question4():
+    return html.Div(
+        className='',
+        children=[
+            html.Div(
+                className='board',
+                children=html.Div(
+                    className='heading-1',
+                    children='4. Which component differ white wine and red wine?'
+                ),
+            ),
+            # single_feature_section(),
+            pair_feature_section()
+        ]
+    )
+
+
+def explore_content():
+    return [
+        question1(),
+        correlation_section(),
+        good_feature_section(),
+        question2(),
+        question3(),
+        question4(),
     ]
 
 
@@ -504,7 +717,7 @@ def page_content_callback(dash_app):
     @dash_app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
     def update_url(pathname):
         if pathname == LINK['explore']:
-            return explore_layout(wine_type='red')
+            return explore_layout()
         elif pathname == LINK['overview']:
             return overview_layout()
         elif pathname == LINK['about']:
@@ -522,13 +735,22 @@ def choose_wine_callback(dash_app):
 def hist_graph_dropdown_callback(dash_app):
     @dash_app.callback(Output('hist-graph', 'figure'), [Input('hist-dropdown', 'value')])
     def update_hist_graph(value):
-        return feature_histogram(value)
+        return feature_seperation_figure(value)
 
 
 def color_dropdown_callback(dash_app):
-    @dash_app.callback(Output('color-hist-graph', 'figure'), [Input('color-dropdown', 'value')])
+    @dash_app.callback(Output('single-ftr-hist', 'figure'), [Input('color-dropdown', 'value')])
     def update_hist_graph(value):
-        return color_hist(value)
+        return single_feature_red_white(value)
+
+
+def pair_dropdown_callback(dash_app):
+    @dash_app.callback(
+        [Output('pair-scatter-graph', 'figure'), Output('pair-contour-graph', 'figure')],
+        [Input('1st-ftr-dropdown', 'value'), Input('2nd-ftr-dropdown', 'value')]
+    )
+    def func(first, second):
+        return (pair_scatter(first, second), pair_contour(first, second))
 
 
 def register_dash(app):
@@ -570,4 +792,5 @@ def register_dash(app):
     page_content_callback(dash_app)
     hist_graph_dropdown_callback(dash_app)
     color_dropdown_callback(dash_app)
+    pair_dropdown_callback(dash_app)
     return dash_app
