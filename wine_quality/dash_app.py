@@ -22,6 +22,14 @@ MAIN_COLOR_0 = 'dodgerblue'
 MAIN_COLOR_1 = 'lightskyblue'
 WHITE0 = '#e8e1e1'
 
+# SHOW_PLOTLY_CONTROL = True
+graph_config=dict(
+    displayModeBar=True,
+    toImageButtonOptions=dict(
+        filename='wine-export',  format='svg'
+    )
+)
+
 
 def load(file_name):
     print('Load ' + file_name)
@@ -67,6 +75,7 @@ def correlation_fig(**kargs):
 
     shared_axes_conf = dict(
         showgrid=False,
+        tickfont=dict(size=15),
         tickvals=0.5+np.arange(n),
         ticktext=DF_RED.columns,
         zeroline=False
@@ -93,7 +102,8 @@ def correlation_fig(**kargs):
         #     showlegend=False,
         width=fig_size, height=fig_size,
         margin=dict(pad=0, t=0, l=0, r=0, b=0),
-        plot_bgcolor="white"
+        plot_bgcolor="white",
+        legend=dict(x=-0.3, y=1.2, borderwidth=2, itemsizing='constant', font=dict(size=15))
     )
 
     corr_red = DF_RED.corr().values
@@ -128,8 +138,8 @@ def correlation_graph():
             dcc.Graph(
                 # id='correlation-white',
                 figure=correlation_fig(wine_type='white'),
-                config=dict(displayModeBar=True),
-                style={'display': 'inline-block', 'overflow': 'auto'}
+                config=graph_config,
+                # style={'display': 'inline-block', 'overflow': 'auto'}
             )
         ],
         color=MAIN_COLOR_0
@@ -173,7 +183,7 @@ def feature_seperation_figure(feature_name, is_red=True):
     d1 = df[df['class'] == 'bad'][feature_name]
     d2 = df[df['class'] == 'good'][feature_name]
     fig = ff.create_distplot(
-        [d1, d2], ['bad wine', 'good wine'], bin_size=df[feature_name].std() / 5,
+        [d1, d2], ['Bad wine', 'Good wine'], bin_size=df[feature_name].std() / 5,
         colors=[MAIN_COLOR_1, MAIN_COLOR_0], show_rug=False
     )
     fig.update_traces(
@@ -206,7 +216,8 @@ def feature_layout():
                     value='alcohol'
                 ),
                 dcc.Graph(
-                    id='hist-graph'
+                    id='hist-graph',
+                    config=graph_config,
                 )
 
             ])
@@ -230,7 +241,7 @@ def count_chart():
         y=[DF_RED.shape[0], DF_WHITE.shape[0]],
         marker_color=color
     ))
-    return dcc.Graph(figure=bar_fig)
+    return dcc.Graph(figure=bar_fig, config=graph_config)
 
 
 def pie_chart():
@@ -247,7 +258,7 @@ def pie_chart():
     )
 
     pie_settings = dict(
-        name='', labels=['good', 'bad'], marker=dict(colors=color), hole=0.5)
+        name='', labels=['Good wine', 'Bad wine'], marker=dict(colors=color), hole=0.5)
     fig.add_trace(go.Pie(
         values=[count_good(DF_RED), count_bad(DF_RED)],
         **pie_settings
@@ -263,7 +274,7 @@ def pie_chart():
         ),
         width=500
     )
-    return dcc.Graph(figure=fig)
+    return dcc.Graph(figure=fig, config=graph_config)
 
 
 def preview_dataframe():
@@ -299,11 +310,11 @@ def preview_dataframe():
                 x=0.5,
                 y=0.1
             ),
-            margin=dict(t=0, l=0, r=0,b=0, pad=0)
+            margin=dict(t=0, l=0, r=0, b=0, pad=0)
         )
     )
 
-    return dcc.Graph(figure=fig)
+    return dcc.Graph(figure=fig, config=graph_config)
 
 
 def create_tab(str, id, href):
@@ -372,9 +383,7 @@ def introduction():
 
                 dcc.Markdown(
                     '''
-                        * The two datasets are red and white wine of the ** Portuguese "Vinho Verde" ** wine. 
-                        The inputs include based onsensory data and the output is evaluated by experts.  
-                        * Each expert graded the wine quality between 0 (very bad)and 10 (excellent).  The quality is the median of at least 3 evaluations made by wine expert.  
+                    The two datasets are red and white wine of the **Portuguese "Vinho Verde"** wine.  The dataset is based on sensory data and the quality is evaluated by experts.  Each expert graded the wine quality between **0 (very bad)** and **10 (excellent)**.  The quality is the median of at least 3 evaluations made by wine **expert**.  All data in dataset is real number and have no missing data.  
                         '''
                 )
             ]
@@ -393,7 +402,9 @@ def simple_statistic_markdown():
             ),
             dcc.Markdown(
                 children='''
-                The samples of white wine tripple the samples of red wine. To make classification simple, any sample having quality score greater than 7 will be assigned to good wine, less than 7 is bad wine. In general, the good wine percentage of white wine is bigger than the red one, 21.6% and 13%, respectively.
+                * The  samples  of  white  wine is about **three times** bigger than  the  red  wine.   
+                * To  make classification simple, any sample having quality score greater than 7 will be assigned to **good wine**, less than 7 is **bad wine**.  
+                * In general,  the good wine percentage of white wine is bigger  than the red one, 21.6% and 13%, respectively.
                 '''
             ),
         ]
@@ -432,9 +443,8 @@ def markdown_good_wine():
         children=[
             html.Div(className='heading-2', children='Correlation'),
             dcc.Markdown('''
-                
-                    * The dataset have 2 kind of wine. In the correlation matrix, upper triangle and lower triangle for red wine and white wine, respectively.  
-                    * Look at the correlation matrix, alcohol have strong positive correlation in both wine type. That means increasing wine quality tend to increase the quality as well.
+            * The dataset have 2 kind of wine. In the correlation matrix, **upper triangle** and **lower triangle** for red wine and white wine, respectively.  
+            * **Alcohol** have strong positive correlation in both wine type. That means increasing level of alcohol tend to increase the quality.  
             ''')
         ]
     )
@@ -449,9 +459,8 @@ def question1():
                 children='1. What components make good wine?'
             ),
             dcc.Markdown(children='''
-                Wine score (from 0-10) is already given. Therefore, correlation value of the component value with wine score could determine which components make good wine. Features  having  strong  effect  on the wine quality will have high absolute correlation score with the quality.  
+                    Wine quality (score from 0 to 10) is already given. Therefore, correlation value of the component with the **quality score** could determine which components make good wine. Features  having  strong  effect  on the wine quality will have **high absolute correlation** score with the quality. 
                 '''),
-
         ]
     )
 
@@ -464,7 +473,9 @@ def question2():
                 2. Is there any relations between components, explain those relations?
                 '''),
             dcc.Markdown('''
-                        Alcohol and density pair have very strong negative correlation score, especially in white wine. Due to common knowledge, the density of ethanol is 0.789 g/cm^3 and the density water is 1.000 g/cm^3.  Intuitively, increasing alcohol will lower the density of wine.
+                From correlation matrix, there are some component pair have strong correlation to each other:
+                * **Alcohol and density**. These two components have strong negative correlation score, especially in white wine.  Alcohol and density: due to common knowledge, the density of ethanol is 0.789 g/cm^3 and the density water is 1.000 g/cm^3.  Intuitively, increasing alcohol will lower the density of wine.
+                * **pH and fix acidity**. Generally, the lower the pH, the higher the acidity in the wine. However, there is no direct connection between total acidity and pH. (**wikipedia**)
                     ''')
         ]
     )
@@ -493,7 +504,7 @@ def good_feature_section():
             html.Div(className='board', children=[
                 html.Div(className='heading-2', children='Good feature!'),
                 dcc.Markdown('''
-                Histogram is a good visualization which show the separation strength of each components. Thus, good feature are features that separate clearly good and bad wine.
+                **Good features** are features that well **separate** good and bad wine. The separation ability of each component can easily determine by histograms. 
                 ''')
             ]),
             html.Div(
@@ -508,7 +519,8 @@ def good_feature_section():
                             value='alcohol'
                         ),
                         dcc.Graph(
-                            id='hist-graph'
+                            id='hist-graph',
+                            config=graph_config
                         )
                     ]
                 )
@@ -524,10 +536,10 @@ def question3():
             html.Div(className='heading-1',
                      children='3. Does red wine and white wine share the same quality criteria?'),
             dcc.Markdown('''
-                * Both kind of wine share the same criteria on the alcohol. It seem the higher level of alcohol the better.
-                * However, two wine type have different criteria in density and volatile acidity. 
-                * In general, people prefer low density wine, especially in white wine. That make sense cause people also prefer high level of alcohol.
-                * Low volatile acidity is important for red wine, but it's not so important for the white one. As the name suggests, volatile acidity (VA) is referencing volatility in wine, which causes it to go bad. Acetic acid builds up in wine when there’s too much exposure to oxygen during winemaking and is usually caused by acetobacter (the vinegar-making bacteria!). Volatile acidity is considered a fault at higher levels (1.4 g/L in red and 1.2 g/L in white) and can smell sharp like nail polish remover.
+                * Both kind of wine share the same criteria on the **alcohol**. It seem **higher** level of alcohol tend to make wine **taste better**.
+                * However, two wine type have **different** criteria in **density** and **volatile acidity**. 
+                * In general, people prefer **low density wine**, especially in white wine. This result are consitant with high level of alcohol.
+                * **Low volatile acidity** is important for **red wine**, but it's not so important for the white one. As the name suggests, volatile acidity (VA) is referencing volatility in wine, which causes it to go bad. Acetic acid builds up in wine when there’s too much exposure to oxygen during winemaking and is usually caused by acetobacter (the vinegar-making bacteria!). Volatile acidity is considered a fault at higher levels (1.4 g/L in red and 1.2 g/L in white) and can smell sharp like nail polish remover. (**https://winefolly.com**)
             ''')
         ]
     )
@@ -545,7 +557,7 @@ def single_feature_section():
                         children="Single feature"
                     ),
                     dcc.Markdown(children='''
-                        Histogram is very good to find resonable good feature to discriminate wine color, such as: " **volatile acidity**", "**total sulfur dioxide**".
+                        * Using histogram, it is easy to find a resonable good feature to discriminate wine color, such as: " **volatile acidity**", "**total sulfur dioxide**".
                     '''),
                 ]
             ),
@@ -561,6 +573,7 @@ def single_feature_section():
                     dcc.Loading(
                         dcc.Graph(
                             id='single-ftr-hist',
+                            config=graph_config,
                         )
                     )
 
@@ -582,7 +595,8 @@ def pair_feature_section():
                         children="Pair features"
                     ),
                     dcc.Markdown(children='''
-                        With one more attribute, the separation is a bit clearer using scatter plot or density contour plot.  
+                        * With one more attribute, the separation is a bit clearer using scatter plot or density contour plot.
+
                         **Pair features give good separation:**
                         * total sulfur dioxide, chlorides
                         * sulphates, chlorides
@@ -611,7 +625,7 @@ def pair_feature_section():
                                     id='2nd-ftr-dropdown',
                                     options=[{'label': e, 'value': e}
                                              for e in DF_RED.columns],
-                                    value=DF_RED.columns[2]
+                                    value='chlorides'
                                 ),
                             )
                         ]
@@ -622,9 +636,11 @@ def pair_feature_section():
                             children=[
                                 dcc.Graph(
                                     id='pair-scatter-graph',
+                                    config=graph_config,
                                 ),
                                 dcc.Graph(
-                                    id='pair-contour-graph'
+                                    id='pair-contour-graph',
+                                    config=graph_config
                                 )
                             ]
                         )
@@ -644,7 +660,7 @@ def pair_scatter(ftr0, ftr1):
                      )
     fig.update_layout(dict(
         width=400, height=400, legend=dict(xanchor='left', x=0, y=1.2),
-        margin=dict(l=0, r=0)
+        margin=dict(l=50, r=0)
     ))
     return fig
 
@@ -658,7 +674,7 @@ def pair_contour(ftr0, ftr1):
 
     fig.update_layout(dict(
         width=500, height=400, legend=dict(xanchor='left', x=0, y=1.2),
-        margin=dict(l=0, r=0)
+        margin=dict(l=50, r=0)
     ))
     return fig
 
@@ -671,7 +687,7 @@ def question4():
                 className='board',
                 children=html.Div(
                     className='heading-1',
-                    children='4. Which component differ wine color?'
+                    children='4. What is the difference between red and white wine?'
                 ),
             ),
             single_feature_section(),
