@@ -31,12 +31,13 @@ def load(file_name):
 DF_RED = load('red.csv')
 DF_WHITE = load('white.csv')
 
-OPPOSITE_COLOR_0='crimson'
+OPPOSITE_COLOR_0 = 'crimson'
 df_red = DF_RED.copy(deep=True)
 df_white = DF_WHITE.copy(deep=True)
 df_red['color'] = 'red'
-df_white['color'] ='white'
+df_white['color'] = 'white'
 df_combine = pd.concat([df_red, df_white])
+
 
 def correlation_fig(**kargs):
     cscale = [[0, 'black'], [1, MAIN_COLOR_0]]
@@ -133,7 +134,6 @@ def correlation_graph():
         ],
         color=MAIN_COLOR_0
     )
-
 
 
 def single_feature_red_white(feature_name):
@@ -338,15 +338,7 @@ def layout():
                 # create_tab('Classification', 'classification', LINK['classification']),
                 create_tab('About', 'about', LINK['about']),
             ]),
-            dcc.Loading(
-                color=MAIN_COLOR_0,
-                children=[
-
-                    html.Div(id='page-content')
-                ],
-
-                type="default"
-            )
+            dcc.Loading(id='page-content')
         ]
     )
 
@@ -412,16 +404,16 @@ def simple_statistic_markdown():
 
 
 def overview_layout():
-    return html.Div(
+    return dcc.Loading(
         # className='board',
         children=[
             introduction(),
-            dcc.Loading(
+            html.Div(
                 className='board',
                 children=preview_dataframe(),
             ),
             simple_statistic_markdown(),
-            dcc.Loading(
+            html.Div(
                 className='d-flex flex-row',
                 children=[
                     html.Div(
@@ -646,21 +638,23 @@ def pair_feature_section():
         ]
     )
 
+
 def pair_scatter(ftr0, ftr1):
     fig = px.scatter(df_combine, x=ftr0, y=ftr1,
-                color='color', 
-                color_discrete_sequence=[OPPOSITE_COLOR_0, MAIN_COLOR_0],
-                opacity=0.3
-    )
+                     color='color',
+                     color_discrete_sequence=[OPPOSITE_COLOR_0, MAIN_COLOR_0],
+                     opacity=0.3
+                     )
     fig.update_layout(dict(
         width=400, height=400, legend=dict(xanchor='left', x=0, y=1.2),
         margin=dict(l=0, r=0)
     ))
     return fig
 
+
 def pair_contour(ftr0, ftr1):
     fig = px.density_contour(
-        df_combine, x=ftr0, y=ftr1, color="color", 
+        df_combine, x=ftr0, y=ftr1, color="color",
         color_discrete_sequence=[OPPOSITE_COLOR_0, MAIN_COLOR_0],
         marginal_x="histogram", marginal_y="histogram"
     )
@@ -670,6 +664,7 @@ def pair_contour(ftr0, ftr1):
         margin=dict(l=0, r=0)
     ))
     return fig
+
 
 def question4():
     return html.Div(
@@ -682,7 +677,7 @@ def question4():
                     children='4. Which component differ white wine and red wine?'
                 ),
             ),
-            # single_feature_section(),
+            single_feature_section(),
             pair_feature_section()
         ]
     )
@@ -700,26 +695,23 @@ def explore_content():
 
 
 def explore_layout(**kargs):
-    return html.Div(
-        children=[
-            dcc.Loading(
-                children=html.Div(
-                    id='explore-content',
-                    children=explore_content(**kargs)
-                ),
-                color=MAIN_COLOR_0
-            )
-        ]
+    return dcc.Loading(
+        id='explore-content',
+        children=explore_content(**kargs)
     )
+
+
+explore = explore_layout()
+overview = overview_layout()
 
 
 def page_content_callback(dash_app):
     @dash_app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
     def update_url(pathname):
         if pathname == LINK['explore']:
-            return explore_layout()
+            return explore
         elif pathname == LINK['overview']:
-            return overview_layout()
+            return overview
         elif pathname == LINK['about']:
             return about_markdown()
         else:
@@ -746,8 +738,10 @@ def color_dropdown_callback(dash_app):
 
 def pair_dropdown_callback(dash_app):
     @dash_app.callback(
-        [Output('pair-scatter-graph', 'figure'), Output('pair-contour-graph', 'figure')],
-        [Input('1st-ftr-dropdown', 'value'), Input('2nd-ftr-dropdown', 'value')]
+        [Output('pair-scatter-graph', 'figure'),
+         Output('pair-contour-graph', 'figure')],
+        [Input('1st-ftr-dropdown', 'value'),
+         Input('2nd-ftr-dropdown', 'value')]
     )
     def func(first, second):
         return (pair_scatter(first, second), pair_contour(first, second))
