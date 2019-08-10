@@ -128,7 +128,7 @@ def correlation_graph():
             dcc.Graph(
                 # id='correlation-white',
                 figure=correlation_fig(wine_type='white'),
-                config=dict(displayModeBar=False),
+                config=dict(displayModeBar=True),
                 style={'display': 'inline-block', 'overflow': 'auto'}
             )
         ],
@@ -267,11 +267,8 @@ def pie_chart():
 
 
 def preview_dataframe():
-    rowEvenColor = 'deepskyblue'
-    rowOddColor = 'dodgerblue'
 
     rowEvenColor = 'deepskyblue'
-    rowOddColor = 'steelblue'
     rowOddColor = 'dodgerblue'
 
     df = DF_RED.head(10)
@@ -296,13 +293,13 @@ def preview_dataframe():
             )
         ],
         layout=dict(
-            #         title=dict(
-            #             text='Dataset sample',
-            #             x=0.5,
-            #             y=0.2
-            # #             xanchor='center'
-            #         ),
-            margin=dict(t=0, l=0, r=0, b=0)
+            height=350,
+            title=dict(
+                text='Dataframe overview',
+                x=0.5,
+                y=0.1
+            ),
+            margin=dict(t=0, l=0, r=0,b=0, pad=0)
         )
     )
 
@@ -375,9 +372,9 @@ def introduction():
 
                 dcc.Markdown(
                     '''
-                        The two datasets are red and white wine of the ** Portuguese "Vinho Verde" ** wine. 
+                        * The two datasets are red and white wine of the ** Portuguese "Vinho Verde" ** wine. 
                         The inputs include based onsensory data and the output is evaluated by experts.  
-                        Each expert graded the wine quality between 0 (very bad)and 10 (excellent).  The quality is the median of at least 3 evaluations made by wine expert.  
+                        * Each expert graded the wine quality between 0 (very bad)and 10 (excellent).  The quality is the median of at least 3 evaluations made by wine expert.  
                         '''
                 )
             ]
@@ -452,7 +449,7 @@ def question1():
                 children='1. What components make good wine?'
             ),
             dcc.Markdown(children='''
-                * Wine score (from 0-10) is already given. Therefore, correlation value of the component value with wine score could determine which components make good wine. Features  having  strong  effect  onthe wine quality will have high absolute correlation score with the quality.  
+                Wine score (from 0-10) is already given. Therefore, correlation value of the component value with wine score could determine which components make good wine. Features  having  strong  effect  on the wine quality will have high absolute correlation score with the quality.  
                 '''),
 
         ]
@@ -467,7 +464,7 @@ def question2():
                 2. Is there any relations between components, explain those relations?
                 '''),
             dcc.Markdown('''
-                        Alcohol and density pair have very strong negative correlation score, especially in white wine. Due to common knowledge, the density of ethanol is $0.789 g/cm^3$ and the density water is $1.000 g/cm^3$.  Intuitively, increasing alcohol will lower the density of wine.
+                        Alcohol and density pair have very strong negative correlation score, especially in white wine. Due to common knowledge, the density of ethanol is 0.789 g/cm^3 and the density water is 1.000 g/cm^3.  Intuitively, increasing alcohol will lower the density of wine.
                     ''')
         ]
     )
@@ -674,7 +671,7 @@ def question4():
                 className='board',
                 children=html.Div(
                     className='heading-1',
-                    children='4. Which component differ white wine and red wine?'
+                    children='4. Which component differ wine color?'
                 ),
             ),
             single_feature_section(),
