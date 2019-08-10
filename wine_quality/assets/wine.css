@@ -1,29 +1,31 @@
 :root {
-    --red0: #820505;
+    --main_color: dodgerblue;
 }
 #select-wine{
     text-align: center;
 }
 #main-page{
-    width: 1100px;
+    width: 1000px;
     margin: 0 auto;
-    border: 3px solid var(--red0);
+    border: 3px solid var(--main_color);
     box-shadow: 10px 10px 5px grey;
-    background: #f2ebec;
+    /* background: #f2ebec; */
+    background: seashell;
+    /* background: lightcyan; */
 }
 #page-content{
     /* width: 500px; */
     height: 100%;
 }
 #subject{
-    color: var(--red0);
+    color: var(--main_color);
     margin-right: 10px;
     margin-top: 10px;
     text-align: right;
     /* box-shadow: 10px 10px 5px grey; */
 }
 #header{
-    background-color:var(--red0);
+    background-color:var(--main_color);
     font-size: 25px;
     font-weight: bold;
     color: white;
@@ -41,7 +43,10 @@
     height: 600px;
 }
 .board{
-    background: #ffffff;
+    /* background: #ffffff; */
+    /* background: lightcyan; */
+    background: white;
+    
     border-radius: 10px;
     /* width: 90%; */
     /* margin-top: 10px;
@@ -59,12 +64,23 @@
     border: 0;
     border-right: 4px;
     border-style: solid;
-    border-color: var(--red0);
+    border-color: var(--main_color);
+}
+.heading{
+    padding: 10px;
+    /* display: inline; */
+    border: 0;
+    font-size: 20px;
+    font-weight: bold;
+    border-left: 20px;
+    border-style: solid;
+    border-color: var(--main_color);
+    margin-bottom: 5px;
 }
 
 .tab a{
     text-decoration: none;
-    color: var(--red0);
+    color: var(--main_color);
 }
 table{
     table-layout: fixed;

@@ -18,7 +18,8 @@ import time
 LINK = dict(overview='/', explore='/wine/explore',
             classification='/wine/classification',
             about='/wine/about')
-RED0 = '#820505'
+MAIN_COLOR_0 = 'dodgerblue'
+MAIN_COLOR_1 = 'lightskyblue'
 WHITE0 = '#e8e1e1'
 
 
@@ -32,76 +33,85 @@ DF_WHITE = load('white.csv')
 
 
 def correlation_fig(**kargs):
-    df = DF_RED
-    cscale = [[0, '#4a4142'], [1, RED0]]
-    if kargs['wine_type'] == 'white':
-        df = DF_WHITE
-        cscale = [[0, '#4a4142'], [1, "#FFF"]]
-    corr_matrix = df.corr().values  # [::-1, :]
-    # print(DF_RED.corr())
-    # print(DF_WHITE.corr())
-    n = df.columns.size
-    M = []
-    for row in range(n):
-        for col in range(n):
-            if row != col:
-                M.append((0.5+col, 0.5+n-1-row, corr_matrix[row, col]))
-    xs, ys, corr_values = zip(*M)
-    markers_size = abs(np.array(corr_values))
-    fig_size = 500
+    cscale = [[0, 'black'], [1, MAIN_COLOR_0]]
+    fig_size = 600
     circle_size = fig_size/20.0
-    scatter = go.Scatter(
-        x=xs, y=ys, mode='markers',
-        hovertext=corr_values,
-        marker=dict(
-            size=markers_size * circle_size,
-            cmax=1,
-            cmin=-1,
-            color=corr_values,
-            colorbar=dict(
-                title="Colorbar"
-            ),
-            colorscale=cscale
+    n = DF_RED.shape[1]
+
+    def create_scatter(name, M, circle_size, **kargs_marker):
+        xs, ys, corr_values = zip(*M)
+        markers_size = abs(np.array(corr_values))
+        return go.Scatter(
+            name=name,
+            x=xs,
+            y=ys,
+            mode='markers',
+            hovertext=corr_values,
+            showlegend=True,
+            marker=dict(
+                size=markers_size * circle_size,
+                cmax=1,
+                cmin=-1,
+                color=corr_values,
+                colorscale=cscale,
+                **kargs_marker
+            )
         )
+
+    shared_axes_conf = dict(
+        showgrid=False,
+        tickvals=0.5+np.arange(n),
+        ticktext=DF_RED.columns,
+        zeroline=False
+    )
+
+    xaxis_conf = dict(
+        side='top',
+        range=[-0.5, 12.5],
+        tickangle=-90,
+        **shared_axes_conf
+    )
+
+    yaxis_conf = dict(
+        scaleanchor="x",
+        scaleratio=1,
+        autorange='reversed',
+        range=[0, 11],
+        **shared_axes_conf
     )
 
     layout = go.Layout(
-        showlegend=False,
+        yaxis=yaxis_conf,
+        xaxis=xaxis_conf,
+        #     showlegend=False,
         width=fig_size, height=fig_size,
         margin=dict(pad=0),
-        yaxis=dict(
-            scaleanchor="x", scaleratio=1,
-            tickvals=0.5+np.arange(n),
-            ticktext=df.columns[::-1],
-            showgrid=False,
-            autorange=False,
-            range=[0, 11],
-            zeroline=False
-        ),
-        xaxis=dict(
-            showgrid=False,
-            tickvals=0.5+np.arange(n),
-            ticktext=df.columns,
-            side='top',
-            range=[-0.5, 12.5],
-            autorange=False,
-            zeroline=False
-        ),
-        plot_bgcolor="LightSteelBlue",
-        # autosize=True,
-        # title='Correlation matrix',
-
+        plot_bgcolor="white"
     )
 
+    corr_red = DF_RED.corr().values
+    corr_red = [(0.5 + col, 0.5 + row, corr_red[row, col])
+                for row in range(n) for col in range(n) if row != col and col > row]
+
+    corr_white = DF_WHITE.corr().values
+    corr_white = [(0.5 + col, 0.5 + row, corr_white[row, col])
+                  for row in range(n) for col in range(n) if row != col and col < row]
+    data = [
+        create_scatter('Red wine', corr_red, circle_size, symbol='circle'),
+        create_scatter('White wine', corr_white,
+                       circle_size, symbol='star-square')
+    ]
+
+    line_settings = dict(mode='lines', line=dict(width=1),
+                         marker=dict(color='black'), showlegend=False)
+    for row in range(n+1):
+        data.append(go.Scatter(x=[0, n], y=[row, row], **line_settings))
+        data.append(go.Scatter(x=[row, row], y=[0, n], **line_settings))
+    data.append(go.Scatter(x=[0, n], y=[0, n], **line_settings))
     fig = go.Figure(
-        data=scatter,
+        data=data,
         layout=layout
     )
-    for row in range(n+1):
-        fig.add_scatter(x=[0, n], y=[row, row], mode='lines',
-                        marker=dict(color='white'))
-        fig.add_scatter(x=[row, row], y=[0, n], mode='lines',
-                        marker=dict(color='black'))
     return fig
 
 
@@ -115,21 +125,15 @@ def correlation_graph(**kargs):
     return dcc.Loading(
         children=[
             dcc.Graph(
-                id='correlation-red',
-                figure=correlation_fig(wine_type='red'),
-                config=dict(displayModeBar=False),
-                style={'display': 'inline-block'}
-            ),
-            dcc.Graph(
-                id='correlation-white',
+                # id='correlation-white',
                 figure=correlation_fig(wine_type='white'),
                 config=dict(displayModeBar=False),
-                style={'display': 'inline-block'}
+                style={'display': 'inline-block', 'overflow': 'auto'}
             )
         ],
 
 
-        color=RED0
+        color=MAIN_COLOR_0
     )
 
 
@@ -142,7 +146,7 @@ def color_hist(feature_name):
     d1 = df[df['type'] == 'white'][feature_name]
     d2 = df[df['type'] == 'red'][feature_name]
     fig = ff.create_distplot(
-        [d1, d2], ['white wine', 'red wine'], colors=[WHITE0, RED0])
+        [d1, d2], ['white wine', 'red wine'], colors=[WHITE0, MAIN_COLOR_0])
     fig.update_layout(dict(width=500))
     return fig
 
@@ -154,7 +158,7 @@ def feature_histogram(feature_name):
     d1 = df[df['class'] == 'bad'][feature_name]
     d2 = df[df['class'] == 'good'][feature_name]
     fig = ff.create_distplot(
-        [d1, d2], ['bad wine', 'good wine'], bin_size=0.1, colors=[WHITE0, RED0]
+        [d1, d2], ['bad wine', 'good wine'], bin_size=0.1, colors=[WHITE0, MAIN_COLOR_0]
     )
     fig.update_traces(
         marker=dict(
@@ -179,7 +183,7 @@ def feature_layout():
     return html.Div(
         style={'width': '500px', 'display': 'inline-block'},
         children=[
-            dcc.Loading(color=RED0, children=[
+            dcc.Loading(color=MAIN_COLOR_0, children=[
                 dcc.Dropdown(
                     id='hist-dropdown',
                     options=[{'label': e, 'value': e} for e in df.columns],
@@ -193,79 +197,100 @@ def feature_layout():
         ])
 
 
-def pie_chart():
-    red_df = DF_RED.copy(deep=True)
-    white_df = DF_WHITE.copy(deep=True)
-    def convert_class(x): return 'good' if x >= 7 else 'bad'
-    white_df['class'] = white_df['quality'].apply(convert_class)
-    good = (sum(white_df['class'] == 'good'))
-    bad = white_df.shape[0]-good
-    bar_fig = go.Figure(layout=go.Layout(width=450))
+def count_chart():
+    color = [MAIN_COLOR_0, MAIN_COLOR_1]
+
+    bar_fig = go.Figure(
+        layout=go.Layout(
+            width=300,
+            margin=dict(
+                t=0, l=0, r=0, b=0
+            )
+        )
+    )
+
     bar_fig.add_trace(go.Bar(
         x=['Red white', 'White wine'],
-        y=[red_df.shape[0], white_df.shape[0]],
-        marker_color=[RED0, WHITE0]
+        y=[DF_RED.shape[0], DF_WHITE.shape[0]],
+        marker_color=color
     ))
+    return dcc.Graph(figure=bar_fig)
 
+
+def pie_chart():
+    color = [MAIN_COLOR_0, MAIN_COLOR_1]
+    def count_good(df): return sum(df.quality >= 7)
+    def count_bad(df): return df.shape[0] - count_good(df)
+    # color = ['steelblue', 'powderblue']
     fig = make_subplots(
         rows=1, cols=2,
         specs=[
             [{'type': 'pie'}, {'type': 'pie'}]
         ],
-        subplot_titles=("White Wine", "Red Wine")
+        subplot_titles=("Red Wine", "White Wine")
     )
-    fig.update_layout(dict(width=600))
 
+    pie_settings = dict(
+        name='', labels=['good', 'bad'], marker=dict(colors=color), hole=0.5)
     fig.add_trace(go.Pie(
-        labels=['good', 'bad'],
-        values=[good, bad],
-        marker=dict(colors=[RED0, WHITE0]),
-        hole=0.5
+        values=[count_good(DF_RED), count_bad(DF_RED)],
+        **pie_settings
     ), row=1, col=1)
 
-    red_df['class'] = red_df['quality'].apply(convert_class)
-    good = (sum(red_df['class'] == 'good'))
-    bad = red_df.shape[0]-good
     fig.add_trace(go.Pie(
-        labels=['good', 'bad'],
-        values=[good, bad],
-        marker=dict(colors=[RED0, WHITE0]),
-        hole=0.5
+        values=[count_good(DF_WHITE), count_bad(DF_WHITE)],
+        **pie_settings
     ), row=1, col=2)
-    return html.Div(
-        children=[
-            dcc.Graph(
-                figure=bar_fig,
-                style={'display': 'inline-block'}
-            ),
-            dcc.Graph(
-                figure=fig,
-                style={'display': 'inline-block'}
+    fig.update_layout(
+        margin=dict(
+            t=20, l=0, r=0, b=0
+        ),
+        width=500
+    )
+    return dcc.Graph(figure=fig)
+
+
+def preview_dataframe():
+    rowEvenColor = 'deepskyblue'
+    rowOddColor = 'dodgerblue'
+
+    rowEvenColor = 'deepskyblue'
+    rowOddColor = 'steelblue'
+    rowOddColor = 'dodgerblue'
+
+    df = DF_RED.head(10)
+    fig = go.Figure(
+        data=[
+            go.Table(
+                header=dict(
+                    values=df.columns,
+                    line_color='black',
+                    fill_color='dodgerblue',
+                    font_color='white',
+                    font_size=12,
+                    align='center'
+                ),
+                cells=dict(
+                    values=df.values.T,  # 2nd column
+                    line_color='black',
+                    #                fill_color='white',
+                    fill_color=[['white', 'lightgray']*5],
+                    font_color='black',
+                    align='center')
             )
-
         ],
-        style={'display': 'inline-block'}
+        layout=dict(
+            #         title=dict(
+            #             text='Dataset sample',
+            #             x=0.5,
+            #             y=0.2
+            # #             xanchor='center'
+            #         ),
+            margin=dict(t=0, l=0, r=0, b=0)
+        )
     )
 
-
-def preview_data():
-    df = DF_RED.sample(frac=1).head(10)
-
-    table = dash_table.DataTable(
-        id='table',
-        columns=[{"name": i, "id": i} for i in df.columns],
-        data=df.to_dict('records'),
-        style_header={'backgroundColor': RED0, 'color': 'white'},
-        style_data={'border': '1px solid ' + RED0},
-        style_data_conditional=[
-            {
-                'if': {'row_index': 'odd'},
-                'backgroundColor': WHITE0,
-            }
-        ]
-    )
-    # print(table)
-    return table
+    return dcc.Graph(figure=fig)
 
 
 def create_tab(str, id, href):
@@ -298,7 +323,7 @@ def layout():
                 create_tab('About', 'about', LINK['about']),
             ]),
             dcc.Loading(
-                color=RED0,
+                color=MAIN_COLOR_0,
                 children=[
 
                     html.Div(id='page-content')
@@ -309,39 +334,125 @@ def layout():
         ]
     )
 
+def about_markdown():
+    return dcc.Markdown(
+        className='board',
+        children=
+        '''
+        **John von Neumann Institute ICT 2018**  
+        **Group 1:**
+        * Pham Tien Dung
+        * Hoang Hong Quan
+        * Do Duc Anh
+
+        **Stack:**
+        * Dash
+        * Flask
+        * Bootstrap
+        * Python libraries: numpy, pandas
+        '''
+
+    )
+
+def introduction():
+    return html.Div(
+        className='board',
+        children=
+            html.Div(
+                children=[
+                    html.Div(
+                        className='heading',
+                        children='Introduction'
+                    ),
+
+                    dcc.Markdown(
+                        '''
+                        The two datasets are red and white wine of the ** Portuguese "Vinho Verde" ** wine. 
+                        The inputs include based onsensory data and the output is evaluated by experts.  
+                        Each expert graded the wine quality between 0 (very bad)and 10 (excellent).  The quality is the median of at least 3 evaluations made by wine expert.  
+                        '''
+                    )
+                ]
+            )
+        
+    )
+
+def simple_statistic_markdown():
+    return  html.Div(
+        className='board',
+        children=[
+            html.Div(
+                className='heading',
+                children='Statistic'
+            ),
+            dcc.Markdown(
+                children='''
+                The samples of white wine tripple the samples of red wine. To make classification simple, any sample having quality score greater than 7 will be assigned to good wine, less than 7 is bad wine. In general, the good wine percentage of white wine is bigger than the red one, 21.6% and 13%, respectively.
+                '''
+            ),
+        ]
+    )
 
 def overview_layout():
     return html.Div(
-        className='board',
+        # className='board',
         children=[
-            preview_data(),
-            pie_chart()
+            introduction(),
+            html.Div(
+                className='board',
+                children=preview_dataframe(),
+            ),
+            simple_statistic_markdown(),
+            html.Div(
+                className='d-flex flex-row',
+                children=[
+                    html.Div(
+                        className='board',
+                        children=count_chart()
+                    ),
+                    html.Div(
+                        className='board',
+                        children=pie_chart()
+                    )
+                ]
+            )
         ])
+
 
 def markdown_good_wine():
     return html.Div(className="board", children=[
         dcc.Markdown('''
-                ## What components make good wine?
-                * Wine score (from 0-10) is already given. Therefore, correlation value of the component value with wine score could determine which components make good wine. Features  having  strong  effect  onthe wine quality will have high absolute correlation score with the quality.  
+               
                 * The dataset have 2 kind of wine. In the correlation matrix, upper triangle and lower triangle for red wine and white wine, respectively.  
-                * Look at the correlation matrix, alcohol have strong positive correlation in both wine type. That means increasing wine qualitytend to increase the quality as well.  
+                * Look at the correlation matrix, alcohol have strong positive correlation in both wine type. That means increasing wine qualitytend to increase the quality as well.
         ''')
     ])
 
+
 def explore_content(**kargs):
     return [
-        markdown_good_wine(),
-        html.Div(
-            id='good-wine-explain',
-            className='board',
-            children=[
-                            
-                html.Div('What components make good wine?'),
+        html.Div(children=[
+            dcc.Markdown(className='board', children='''
+            ## What components make good wine?
+            * Wine score (from 0-10) is already given. Therefore, correlation value of the component value with wine score could determine which components make good wine. Features  having  strong  effect  onthe wine quality will have high absolute correlation score with the quality.  
+            '''),
+            html.Div(className='d-flex', children=[
+                markdown_good_wine(),
                 html.Div(
-                    'Is there any relations between components?'),
-                correlation_graph(**kargs),
-            ]
-        ),
+                    id='good-wine-explain',
+                    className='board',
+                    children=[
+                        correlation_graph(**kargs),
+                    ]
+                ),
+            ]),
+            html.Div(
+                className='d-flex',
+                children=[
+
+                ]
+            )
+        ]),
         html.Div(
             id='color-section',
             className='board',
@@ -350,7 +461,7 @@ def explore_content(**kargs):
                     'Is there any components which differ red wine and white wine?', className='left'
                 ),
                 dcc.Loading(
-                    color=RED0,
+                    color=MAIN_COLOR_0,
                     children=html.Div(
                         className='right',
                         children=[
@@ -383,7 +494,7 @@ def explore_layout(**kargs):
                     id='explore-content',
                     children=explore_content(**kargs)
                 ),
-                color=RED0
+                color=MAIN_COLOR_0
             )
         ]
     )
@@ -397,11 +508,7 @@ def page_content_callback(dash_app):
         elif pathname == LINK['overview']:
             return overview_layout()
         elif pathname == LINK['about']:
-            return html.Div(
-                'Group1: Dung Pham, Quan Hoang, Anh Do',
-                id='about',
-                style={'text-align': 'center'}
-            )
+            return about_markdown()
         else:
             return html.Div("nothing yet")
 
@@ -425,10 +532,35 @@ def color_dropdown_callback(dash_app):
 
 
 def register_dash(app):
+    # <link rel="stylesheet"
+    # crossorigin="anonymous">
+    external_stylesheets = [
+        {
+            'href': "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css",
+            'rel': 'stylesheet',
+            'integrity': "sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T",
+            'crossorigin': 'anonymous'
+        }
+    ]
+    external_scripts = [
+        {
+            'href': "https://code.jquery.com/jquery-3.3.1.slim.min.js",
+            'integrity': "sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo",
+            'crossorigin': "anonymous"
+        },
+        {
+            'href': "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js",
+            'integrity': "sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM",
+            'crossorigin': "anonymous"
+        }
+    ]
+
     dash_app = Dash(
         __name__,
         server=app,
-        routes_pathname_prefix='/'
+        routes_pathname_prefix='/',
+        external_scripts=external_scripts,
+        external_stylesheets=external_stylesheets
     )
     dash_app.config.suppress_callback_exceptions = True
     dash_app.title = 'Wine Quality'
